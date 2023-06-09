@@ -11,8 +11,8 @@ library(spatstat)
 
 # Poisson Processes
 ```{r}
-h_pp <- rpoispp(100)
-ih_pp <- rpoispp(function(x,y) {100*exp(-4*y)}, 100)
+h_pp <- rpoispp(100) # homogeneous
+ih_pp <- rpoispp(function(x,y) {100*exp(-4*y)}, 100) # inhomogeneous
 
 plot(coords(h_pp), pch=19, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
 plot(coords(ih_pp), pch=19, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")

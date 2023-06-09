@@ -1,0 +1,28 @@
+---
+title: "Matérn I Visualisations"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+# Matérn I Processes
+```{r}
+set.seed(592)
+
+mpp1 <- rMaternI(200, 0.05)
+mpp2 <- rMaternI(200, 0.025)
+
+plot(coords(mpp1), col="blue", pch=16, asp=1, 
+     xlab="",xaxt="n", ylab="",yaxt="n",
+     xlim=c(0,1), ylim=c(0,1))
+
+plot(coords(mpp2), col="blue", pch=16, asp=1, 
+     xlab="",xaxt="n", ylab="",yaxt="n",
+     xlim=c(0,1), ylim=c(0,1))
+```
+
+

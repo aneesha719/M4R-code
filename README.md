@@ -2,6 +2,7 @@
 Repository containing code used in my M4R project
 
 ## Code for figures:
+Figure 2.5 [edge_correc_fig.Rmd](https://github.com/aneesha719/M4R-code/blob/main/edge_correc_fig.Rmd)
 
 Figure 3.6 [ks_test_statistic_visualisation.R](https://github.com/aneesha719/M4R-code/blob/main/ks_test_statistic_visualisation.R)
 

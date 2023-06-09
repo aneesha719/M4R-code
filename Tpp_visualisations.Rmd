@@ -1,0 +1,24 @@
+---
+title: "Thomas Process Visualisations"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+# Thomas Processes
+```{r}
+T1 <- rThomas(20, 0.02, 10)
+T2 <- rThomas(20, 0.05, 10)
+T3 <- rThomas(20, 0.1, 10)
+
+plot(coords(T1), pch=20, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+plot(coords(T2), pch=20, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+plot(coords(T3), pch=20, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+```
+
+
+

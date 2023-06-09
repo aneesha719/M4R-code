@@ -1,0 +1,22 @@
+---
+title: "Matérn I Visualisations"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+# Poisson Processes
+```{r}
+h_pp <- rpoispp(100)
+ih_pp <- rpoispp(function(x,y) {100*exp(-4*y)}, 100)
+
+plot(coords(h_pp), pch=19, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+plot(coords(ih_pp), pch=19, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+```
+
+
+

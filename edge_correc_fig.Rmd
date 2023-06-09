@@ -1,0 +1,54 @@
+---
+title: "Edge Correction Figure"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+```{r}
+# Generate a HPP
+hpp1 <- rpoispp(5)
+
+# 2 random circle centers
+c1 <- runif(2)
+c2 <- runif(2)
+thetas <- seq(0,2*pi,length.out = 1000)
+
+# radius = 0.3
+# x-coordinate of circles
+x_cs <- 0.3*cos(thetas) + c1
+# y-coordinate of circles
+y_cs <- 0.3*sin(thetas) + c2
+
+# use conditions to colour points inside the square is red
+cols <- rep("black", 1000)
+conds <- x_cs < 1 & x_cs > 0 & y_cs < 1 & y_cs > 0
+cols[conds] <- "red"
+```
+
+```{r}
+# selected point on circumference of circle
+pntx <- x_cs[conds]
+pntx1 <- pntx[300]
+pntx2 <- pntx[70]
+pnty <- y_cs[conds]
+pnty1 <- pnty[300]
+pnty2 <- pnty[70]
+
+# plot points and circles on same figure
+plot(coords(hpp1), pch=16 ,asp=1, xlim=c(min(0,x_cs, y_cs), max(1, x_cs, y_cs)), 
+     ylim=c(min(0,x_cs, y_cs), max(1, x_cs, y_cs)), 
+     xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+rect(0,0,1,1, density = 10)
+points(c1, c2, pch = 21, cex=2, col="black", bg="blue", lwd=2)
+points(x_cs, y_cs, col=cols, pch=20)
+points(c(pntx1, pntx2), c(pnty1, pnty2), pch = 21, cex=2, 
+       col="black", bg="green", lwd=2)
+```
+
+
+

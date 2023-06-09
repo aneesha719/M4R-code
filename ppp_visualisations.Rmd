@@ -1,5 +1,5 @@
 ---
-title: "Matérn I Visualisations"
+title: "Poisson Process Visualisations"
 author: "Aneesha Iqbal"
 date: "09/06/2023"
 output: html_document

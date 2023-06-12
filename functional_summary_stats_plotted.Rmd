@@ -1,0 +1,132 @@
+---
+title: "Plotted Functional Summary Statistics"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+
+# Generate 3 Point Patterns
+
+```{r}
+set.seed(4319)
+
+hpp <- rpoispp(50) # a Homogeneous Poisson Process
+thompp <- rThomas(10, 0.075, 5) # Thomas Process
+matpp <- rMaternI(50, 0.075) # Matérn I Process
+```
+
+
+
+## K-function and Envelopes
+
+```{r}
+hppK <- envelope(hpp, fun = Kest, correction="Ripley")
+thomK <- envelope(thompp, fun = Kest, correction="Ripley")
+matK <- envelope(matpp, fun = Kest, correction="Ripley")
+```
+
+```{r}
+# Plot all K-functions on same axes
+plot(thomK$r, thomK$obs, col="red", type="s", lwd=2, 
+     xlab="r", ylab=expression("K(r)"),
+     main="K-Function for different Processes")
+lines(matK$r, matK$obs, type="s", lwd=2, col="blue")
+lines(hppK$r, hppK$obs, type="s", lwd=2)
+legend("bottomright", inset=.05, c("HPP", "Thomas", "Matérn I"), 
+       col=c("black", "red", "blue"), lty=1, lwd=2,
+       title="Process", cex=0.8)
+
+# Plotting Envelopes on Separate Axes
+plot(hppK, main="K-function Envelope on a HPP") 
+plot(thomK, main="K-function Envelope on a Thomas Process") 
+plot(matK, main="K-function Envelope on a Matérn I Process")
+```
+
+
+
+# Nearest Neighbour Distribution (NND) - estimated
+
+```{r}
+# Find nearest neighbour distances and sort them
+hpp_nnd <- sort(nndist(hpp))
+thom_nnd <- sort(nndist(thompp))
+mat_nnd <- sort(nndist(matpp))
+
+# Find maximum nearest neighbour distance
+xM <- max(hpp_nnd, thom_nnd, mat_nnd)
+
+# find empircal distribution (ecdf) of nearest neighbour distances
+hpp_NND_ecdf <- ecdf(hpp_nnd)
+thom_NND_ecdf <- ecdf(thom_nnd)
+mat_NND_ecdf <- ecdf(mat_nnd)
+```
+
+```{r}
+# plot ecdfs of NND for the three on same axes
+plot(c(0, hpp_nnd, xM), hpp_NND_ecdf(c(0, hpp_nnd, xM)), type="s", lwd=2, 
+     xlab="d", ylab=expression("G(d)"), xlim=c(0, xM),
+     main="Nearest Neighbour Distribution for different Processes")
+lines(c(0, thom_nnd, xM), thom_NND_ecdf(c(0, thom_nnd, xM)), col="red", lwd=2,
+      type="s")
+lines(c(0, mat_nnd, xM), mat_NND_ecdf(c(0, mat_nnd, xM)), col="blue", lwd=2, 
+      type="s")
+legend("bottomright", inset=.05, c("HPP", "Thomas", "Matérn I"), 
+       col=c("black", "red", "blue"), lty=1, lwd=2,
+       title="Process", cex=0.8)
+```
+
+
+
+# Point to Nearest Event Distribution (PNED) - estimated
+
+```{r}
+# Find estimated PNED
+hppF <- Fest(hpp, correction = "none", r=seq(0,0.35, length.out=200))
+thomF <- Fest(thompp, correction = "none", r=seq(0,0.35, length.out=200))
+matF <- Fest(matpp, correction = "none", r=seq(0,0.35, length.out=200))
+
+# plot estimated PNEDs on same axes
+plot(matF$r, matF$raw, col="blue", type="s", lwd=2, 
+     xlab="d", ylab=expression("F(d)"),
+     main="Point to Nearest Event Distribution for different Processes")
+lines(thomF$r, thomF$raw, type="s", lwd=2, col="red")
+lines(hppF$r, hppF$raw, type="s", lwd=2)
+legend("bottomright", inset=.05, c("HPP", "Thomas", "Matérn I"), 
+       col=c("black", "red", "blue"), lty=1, lwd=2,
+       title="Process", cex=0.8)
+```
+
+
+## J-function
+
+```{r}
+# find estimated j-functions for each process
+hppJ <- Jest(hpp, correction = "none", r=seq(0, 0.15, length.out = 100))
+thomJ <- Jest(thompp, correction = "none", r=seq(0, 0.15, length.out = 100))
+matJ <- Jest(matpp, correction = "none", r=seq(0, 0.15, length.out = 100))
+
+# plot the 3 j-functions on same axes
+plot(matJ$r, matJ$un, col="blue", type="l", lwd=2, 
+     xlab="d", ylab=expression("J(d)"), 
+     ylim=c(0, max(hppJ$un, thomJ$un, matJ$un)),
+     main="J-Function for different Processes")
+lines(thomJ$r, thomJ$un, lwd=2, col="red")
+lines(hppJ$r, hppJ$un, lwd=2)
+legend("topleft", inset=.025, c("HPP", "Thomas", "Matérn I"), 
+       col=c("black", "red", "blue"), lty=1, lwd=2,
+       title="Process", cex=0.8)
+```
+
+
+
+
+
+
+
+
+

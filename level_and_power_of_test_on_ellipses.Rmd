@@ -178,6 +178,7 @@ for (i in 1:13) {
   powers <- c(powers, mean(outcomes))
 }
 
+# Figure 3.7
 plot(sigmas, powers, xlab="sigma", ylab="power", 
      main="Power Plot", type = "b", pch = 16)
 ```

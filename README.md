@@ -4,6 +4,8 @@ Repository containing code used in my M4R project
 ## Test Performance Code:
 Subsection 3.5.1: [level_and_power_of_test_on_ellipses.Rmd](https://github.com/aneesha719/M4R-code/blob/main/level_and_power_of_test_on_ellipses.Rmd)
 
+Subsections 3.5.2 and 3.5.3: [test_performance_irregular_cells.Rmd](https://github.com/aneesha719/M4R-code/blob/main/test_performance_irregular_cells.Rmd)
+
 
 ## Code for figures:
 Figures 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2: [plotted_pointpatterns_cells.Rmd](https://github.com/aneesha719/M4R-code/blob/main/plotted_pointpatterns_cells.Rmd)

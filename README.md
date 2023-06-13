@@ -16,6 +16,8 @@ Figure 2.13, 2.14, 2.15: [bivariate_functional_summary_stats_plotted.Rmd](https:
 
 Figure 3.6: [ks_test_statistic_visualisation.R](https://github.com/aneesha719/M4R-code/blob/main/ks_test_statistic_visualisation.R)
 
+Fugure 3.7 [level_and_power_of_test_on_ellipses.Rmd](https://github.com/aneesha719/M4R-code/blob/main/level_and_power_of_test_on_ellipses.Rmd)
+
 Figure 3.9: [test_performance_irregular_cells.Rmd](https://github.com/aneesha719/M4R-code/blob/main/test_performance_irregular_cells.Rmd)
 
 ## Other links for figures:

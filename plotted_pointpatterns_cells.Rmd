@@ -1,0 +1,357 @@
+---
+title: "Visualising Point Patterns and Cells"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+# Install Packages
+
+```{r setup, include=FALSE}
+library(spatstat)
+library(ggplot2)
+```
+
+
+# Homogeneous Poisson Process (HPP): Intensity 100
+## Generate the HPP
+```{r}
+h_pp <- rpoispp(100)
+```
+
+## Visulaise the HPP - Figure 2.1(a)
+```{r}
+xy1 <- coords(h_pp)
+plot(xy1, pch=19, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+```
+
+
+# Inhomogeneous Poisson Process (IHPP): lambda(x,y)=100exp[-4y]
+## Generate the IHPP
+```{r}
+ih_pp <- rpoispp(function(x,y) {100*exp(-4*y)}, 100)
+```
+
+## Visualise the IHPP - Figure2.1(b)
+```{r}
+xy2 <- coords(ih_pp)
+plot(xy2, pch=19, xlim=c(0, 1), ylim=c(0, 1), xlab="", xaxt="n", 
+     ylab="",yaxt="n", col="blue")
+```
+
+
+
+# Thomas Processes: kapp=20, mu=10
+## Generate 3 thomas processes with different sigmas
+```{r}
+T1 <- rThomas(20, 0.02, 10) # sigma = 0.02
+T2 <- rThomas(20, 0.05, 10) # sigma = 0.05
+T3 <- rThomas(20, 0.10, 10) # sigma = 0.1
+```
+
+## Visualise T1 - Figure 2.2(a)
+```{r}
+txy1 <- coords(T1)
+plot(txy1, pch=20, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+```
+
+# Visualise T2 - Figure 2.2(b)
+```{r}
+txy2 <- coords(T2)
+plot(txy2, pch=20, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+```
+
+# Visualise T3 - Figure 2.2(c)
+```{r}
+txy3 <- coords(T3)
+plot(txy3, pch=20, xlab="",xaxt="n", ylab="",yaxt="n", col="blue")
+```
+
+
+
+# Matérn I Process kappa = 200
+## Generate 2 Matérn I Processes for different hardcore distances
+```{r}
+set.seed(592)
+
+mpp1 <- rMaternI(200, 0.050) # r_H = 0.050
+mpp2 <- rMaternI(200, 0.025) # r_H = 0.025
+
+# plot the first Matérn I Process - Figure 2.3(a)
+plot(coords(mpp1), col="blue", pch=16, asp=1, 
+     xlab="",xaxt="n", ylab="",yaxt="n",
+     xlim=c(0,1), ylim=c(0,1))
+
+# plot second Matérn I Process - Figure 2.3(b)
+plot(coords(mpp2), col="blue", pch=16, asp=1, 
+     xlab="",xaxt="n", ylab="",yaxt="n",
+     xlim=c(0,1), ylim=c(0,1))
+```
+
+
+# Ellipse Cells
+## HPPs
+### function to generate HPP ellipse cells
+```{r}
+plot_pp_cells <- function(n, l){
+  for (i in 1:n) {
+    a <- runif(1) # x-scale 
+    b <- runif(1) # y-scale
+    
+    # generate a HPP in the ellipse
+    hpp_i <- rpoispp(l/(a*b*pi), win = ellipse(a,b)) #lambda'= l/(ab pi)
+    cell_df_i <- coords(hpp_i) # extract coordinates
+    
+    # print out plot of cells (use ggplot)
+    g_ellipse <- ggplot(cell_df_i, aes(x=x, y=y))
+    print(g_ellipse + geom_point(col="blue", size=2) + xlim(-1, 1) + ylim(-1, 1) + annotate("path",
+    x=a*cos(seq(0,2*pi,length.out=100)),
+    y=b*sin(seq(0,2*pi,length.out=100)))+ theme_void())
+    print(nrow(cell_df_i)) # print number of events
+    }
+}
+```
+
+### plot 3 HPP ellipse cells with E[N]=50 - Figure 3.1
+```{r}
+set.seed(111)
+plot_pp_cells(3,50)
+```
+
+## Thomas Processes
+### function to generate thomas process ellipse cells
+```{r}
+plot_thom_cells <- function(n, k, scale, mu){
+  for (i in 1:n) {
+    a <- runif(1) # x-scale
+    b <- runif(1) # y-scale
+    
+    # generate thomas process in ellipse
+    ## kappa' = k/(ab pi)
+    ## sigma' = sqrt(ab pi)*scale
+    thom_i <- rThomas(k/(a*b*pi), sqrt(a*b*pi)*scale, mu, win = ellipse(a,b))
+    cell_df_i <- coords(thom_i) # extract coordinates
+    
+    # print out plots of cells (use ggplot)
+    g_ellipse <- ggplot(cell_df_i, aes(x=x, y=y))
+    print(g_ellipse + geom_point(col="blue", size=2) + xlim(-1, 1) + ylim(-1, 1) + annotate("path",
+    x=a*cos(seq(0,2*pi,length.out=100)),
+    y=b*sin(seq(0,2*pi,length.out=100)))+ theme_void())
+    print(nrow(cell_df_i)) # print number of events
+    }
+}
+```
+
+### plot 3 HPP ellipse cells with kappa=10, sigma=0.03, mu=5 - Figure 3.2
+```{r}
+set.seed(112)
+plot_thom_cells(3, 10, 0.03, 5)
+```
+
+
+# Irregular Cells
+## Set boundary of cells
+```{r}
+# radius function of an irregular cell
+r_mag <- function(thetas, u, t){
+    r1 <- u[1]*sin(thetas + t[1]) 
+    r2 <- u[2]*sin(2*thetas + t[2]) 
+    r3 <- u[3]*sin(3*thetas + t[3]) 
+    return(r1 + r2 + r3 + 3)
+}
+
+# cell 1 boundary
+u <- rev(sort(runif(3)))
+t <- runif(3)
+thetas <- seq(0,2*pi,length.out=1000)
+r <- r_mag(thetas, u, t)
+x <- r * cos(thetas)
+y <- r * sin(thetas)
+# set window of cell 2
+WC <- owin(poly = list(x = x, y = y))
+# area of cell 1
+area_cell <- (0.5*sum(u^2)+9)*pi
+
+# cell 2 boundary
+u2 <- rev(sort(runif(3)))
+t2 <- runif(3)
+r2 <- r_mag(thetas, u2, t2)
+x2 <- r2 * cos(thetas)
+y2 <- r2 * sin(thetas)
+# set window of cell 2
+WC2 <- owin(poly = list(x = x2, y = y2))
+# area of cell 2
+area_cell2 <- (0.5*sum(u2^2)+9)*pi
+```
+
+```{r}
+# Plot a Thomas Process in cell 1 - Figure 3.3(b)
+pp_s <- rThomas(10/(area_cell), sqrt(area_cell)*0.03, 5, win = WC)
+plot(x,y, pch=20, cex=0.5, xlab="",xaxt="n", ylab="",yaxt="n")
+points(coords(pp_s), pch = 16, cex=1.25, col="blue")
+
+# Plot a HPP in cell 2 - Figure 3.3(a)
+pp_s2 <- rpoispp(50/area_cell2, win = WC2)
+plot(x2,y2, pch=20, cex=0.5, xlab="",xaxt="n", ylab="",yaxt="n")
+points(coords(pp_s2), pch = 16, cex=1.25, col="blue")
+```
+
+
+# Ellipse Cell Mapped to Reference Cell
+```{r}
+ab <- runif(2)
+hpp_E <- rpoispp(50/(ab[1]*ab[2]*pi), win=ellipse(ab[1],ab[2]))
+hpp_C <- affine(hpp_E, mat=diag(c(1/ab[1],1/ab[2])))
+```
+
+## Visualising ellipse cell before and after mapping to circles
+```{r}
+# Figure 3.4(a)
+g_hpp_ellipse <- ggplot(coords(hpp_E), aes(x=x, y=y))
+g_hpp_ellipse + geom_point(col="blue", size=2) + xlim(-1, 1) + ylim(-1, 1) + annotate("path", x=ab[1]*cos(seq(0,2*pi,length.out=100)),y=ab[2]*sin(seq(0,2*pi,length.out=100)))+ theme_bw()
+# Figure 3.4(b)
+g_hpp_circle <- ggplot(coords(hpp_C), aes(x=x, y=y))
+g_hpp_circle + geom_point(col="blue", size=2) + xlim(-1, 1) + ylim(-1, 1) + annotate("path", x=cos(seq(0,2*pi,length.out=100)),y=sin(seq(0,2*pi,length.out=100)))+ theme_bw()
+```
+
+
+
+# Irregular Cell Mapped to Reference Cell
+```{r}
+in_cell_to_c <- function(x, y, u, t){
+        # takes xy-coordinates of events
+        # u and t parameters to set boundary
+        
+        # initialize empty lists
+        all_thetas <- c() # to store arguments of events 
+        ordered_x <- c() # to store positive then negative values of x
+        ordered_y <- c() # store y corresponding to positive then negative values of x
+        
+        x1 <- x[which(x>=0)] # positive x-coordinates
+        ordered_x <- c(ordered_x, x1) # append positive x-coordinates
+        y1 <- y[which(x>=0)] # y corresponding to positive x-coordinates
+        ordered_y <- c(ordered_y, y1) # append
+
+        # find arguments of coordiantes with positive x-coordinates
+        thetas <- atan(y1/x1)
+        all_thetas <- c(all_thetas, thetas)
+
+        x1 <- x[which(x<0)] # negative x-coordinates
+        ordered_x <- c(ordered_x, x1) # append negative x-coordinates
+        y1 <- y[which(x<0)] # y-coordinates corresponding to negative x
+        ordered_y <- c(ordered_y, y1)
+
+        # find arguments of coordiantes with negative x-coordinates
+        thetas <- pi + atan(y1/x1)
+        all_thetas <- c(all_thetas, thetas)
+
+        r1 <- sqrt(ordered_x^2 + ordered_y^2) # find magnitudes of each event
+
+        r2 <- r_mag(all_thetas, u, t) # find radius of cell boundary
+
+        R <- r2[which(r1 < r2)] # magnitudes of events within cell boundary
+        # mapping to circle
+        x <- ordered_x[which(r1 < r2)] / R
+        y <- ordered_y[which(r1 < r2)] / R
+        return(data.frame(x,y))
+}
+```
+
+```{r}
+set.seed(304)
+# generate cell boundary
+u <- rev(sort(runif(3)))
+t <- runif(3)
+thetas <- seq(0,2*pi,length.out=1000)
+r <- r_mag(thetas, u, t)
+x1 <- r * cos(thetas)
+y1 <- r * sin(thetas)
+WC <- owin(poly = list(x = x1, y = y1))
+# area of cell
+area_cell <- (0.5*sum(u^2)+9)*pi
+# generate HPP in the cell boundary
+pp_s <- rpoispp(50/area_cell, win = WC)
+xy_c <- in_cell_to_c(pp_s$x, pp_s$y, u, t) # map irregular cell to circle
+pp_in_c <- ppp(xy_c[,1], xy_c[,2], window=disc(1))
+```
+
+## Visualising irregular cell before and after mapping to reference
+```{r}
+# Figure 3.5(a)
+g_irr <- ggplot(coords(pp_s), aes(x=x, y=y))
+g_irr + geom_point(col="blue", size=2) + xlim(min(x1,y1), max(x1,y1)) + ylim(min(x1,y1), max(x1,y1)) + annotate("path", x=x1,y=y1)+ theme_bw()
+# Figure 3.5(b)
+g_irr_circle <- ggplot(coords(pp_in_c), aes(x=x, y=y))
+g_irr_circle + geom_point(col="blue", size=2) + xlim(-1, 1) + ylim(-1, 1) + annotate("path", x=cos(seq(0,2*pi,length.out=100)),y=sin(seq(0,2*pi,length.out=100)))+ theme_bw()
+```
+
+
+# Bivariate Independent Posisson Process in an Ellipse
+## Figure 4.1(a)
+```{r}
+set.seed(304)
+a1 <- runif(1) # x-scale
+b1 <- runif(1) # y-scale
+# generate multitype HPP with labels "i" and "j", 
+# lambda'= 25/(a1 * b1 * pi) for both
+bv_pp <- rmpoispp(25/(a1*b1*pi), types=c("i","j"), win=ellipse(a1,b1))
+pp_in_c <- affine(bv_pp, mat=diag(c(1/a1,1/b1))) # mapped to circle
+
+# define colours of points to plot
+point_labs <- rep("red", npoints(bv_pp)) 
+point_labs[which(bv_pp$marks == "j")] <- "blue"
+
+# visualise cell
+plot(coords(bv_pp), col=point_labs, xlim=c(-1, 1), ylim=c(-1,1), pch=16, cex=1.2, asp=1, xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+points(a1*cos(seq(0,2*pi, length.out = 1000)), b1*sin(seq(0,2*pi, length.out = 1000)), pch=20, cex=0.2)
+```
+
+## Figure 4.1(b)
+```{r}
+set.seed(814)
+a2 <- runif(1) # x-scale
+b2 <- runif(1) # y-scale
+# generate multitype HPP with labels "i" and "j", 
+# lambda'= 25/(a2 * b2 * pi) for both
+bv_pp2 <- rmpoispp(25/(a2 * b2 * pi), types=c("i","j"), win=ellipse(a2,b2))
+pp_in_c2 <- affine(bv_pp2, mat=diag(c(1/a2,1/b2)))
+
+# define colours of points to plot
+point_labs2 <- rep("red", npoints(bv_pp2))
+point_labs2[which(bv_pp2$marks == "j")] <- "blue"
+
+# visualise cell
+plot(coords(bv_pp2), col=point_labs2, xlim=c(-1, 1), ylim=c(-1,1), pch=16, cex=1.2, asp=1, xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+points(a2*cos(seq(0,2*pi, length.out = 1000)), b2*sin(seq(0,2*pi, length.out = 1000)), pch=20, cex=0.2)
+```
+
+## Figure 4.1(c)
+```{r}
+set.seed(613)
+a3 <- runif(1) # x-scale
+b3 <- runif(1) # y-scale
+# generate multitype HPP with labels "i" and "j", 
+# lambda'= 25/(a3 * b3 * pi) for both
+bv_pp3 <- rmpoispp(25/(a3*b3*pi), types=c("i","j"), win=ellipse(a3,b3))
+
+# define colours of points to plot
+point_labs3 <- rep("red", npoints(bv_pp3))
+point_labs3[which(bv_pp3$marks == "j")] <- "blue"
+
+# visualise cell
+plot(coords(bv_pp3), col=point_labs3, xlim=c(-1, 1), ylim=c(-1,1), pch=16, cex=1.2, asp=1, xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+points(a3*cos(seq(0,2*pi, length.out = 1000)), b3*sin(seq(0,2*pi, length.out = 1000)), pch=20, cex=0.2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,52 @@
+---
+title: "Plotted Functional Bivariate Summary Statistics"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+
+# Cross K-Function on Urkiola Dataset
+
+```{r}
+urkiola_KBO <- Kcross(urkiola, "birch", "oak", correction = "Ripley")
+urkiola_KOB <- Kcross(urkiola, "oak", "birch", correction = "Ripley")
+```
+
+```{r}
+# plot both cross K-functions on same axes
+plot(urkiola_KBO$r, urkiola_KBO$iso, type="s", col="red",
+     main="Cross K-Functions on the Urkiola Data Set",
+     xlab="r", ylab = "cross K-function")
+lines(urkiola_KOB$r, urkiola_KOB$iso, type="s", col="blue")
+legend("topleft", inset=.025, c(expression(K[BO]), expression(K[OB])), 
+       col=c("red", "blue"), lty=1, lwd=2)
+```
+
+
+
+# Cross J-Function on Amacrine Dataset
+
+```{r}
+amacrine_JAB <- Jcross(amacrine, "on", "off", correction = "none",
+                      r=seq(0, 0.12, length.out = 100))
+amacrine_JBA <- Jcross(amacrine, "off", "on", correction = "none",
+                      r=seq(0, 0.12, length.out = 100))
+```
+
+```{r}
+# plot both cross J-functions on same axes
+plot(amacrine_JBA$r, amacrine_JBA$un, type="l", col="blue", lwd=2,
+     main="Cross J-Functions on the Amacrine Data Set",
+     xlab="r", ylab = "cross J-function", ylim=c(0, 3), xlim = c(0, 0.12))
+lines(amacrine_JAB$r, amacrine_JAB$un, col="red", lwd=2)
+legend("topleft", inset=.025, c(expression(J["on, off"]), expression(J["off, on"])), 
+       col=c("red", "blue"), lty=1, lwd=2)
+```
+
+
+

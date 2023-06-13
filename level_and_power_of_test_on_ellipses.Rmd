@@ -1,0 +1,188 @@
+title: "Level and power of Test on Ellipse Cells"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+# Install Packages
+
+```{r setup, include=FALSE}
+library(spatstat)
+library(ggplot2)
+```
+
+# HOMOGENEOUS POISSON PROCESS IN RANDOM ELLIPSE SHAPED CELL
+```{r}
+pp_ellipse_cell <- function(l){
+  a <- runif(1)
+  b <- runif(1)
+  
+  # generate points for poisson process
+  hpp <- rpoispp(l/(a*b*pi), win = c(-a, a, -b, b))
+  x <- hpp[["x"]] # extract x positions
+  y <- hpp[["y"]] # extract y positions
+  
+  # keep events that lie inside ellipse
+  x_hpp <- x[which((x/a)^2 + (y/b)^2 < 1)]
+  y_hpp <- y[which((x/a)^2 + (y/b)^2 < 1)]
+  
+  cell_df <- data.frame(x = x_hpp, y = y_hpp)
+  cell_df <- rbind(c(a,b), cell_df)
+  return(cell_df)
+}
+# N CELLS WITH HPP
+n_hpp_cells <- function(n, l){
+  cells <- c()
+  for (i in 1:n) {
+    cells <- c(cells, pp_ellipse_cell(l))
+  }
+  return(cells)
+}
+```
+
+# THOMAS PROCESS IN RANDOM ELLIPSE SHAPED CELL
+```{r}
+thom_ellipse_cell <- function(k, scale, mu){
+  a <- runif(1) # stretch in x direction
+  b <- runif(1) # stretch in y direction
+  
+  thom <- rThomas(k/(a*b*pi), sqrt(a*b*pi)*scale, mu, win = owin(c(-a, a),c(-b,b)))
+  x <- thom[["x"]] # extract x positions
+  y <- thom[["y"]] # extract y positions
+  
+  # keep events that lie inside ellipse
+  x_thom <- x[which((x/a)^2 + (y/b)^2 < 1)]
+  y_thom <- y[which((x/a)^2 + (y/b)^2 < 1)]
+  
+  thom_df <- data.frame(x=x_thom, y=y_thom)
+  thom_df <- rbind(c(a,b), thom_df)
+  
+  return(thom_df)
+}
+#N CELLS WITH THOMAS PROCESS
+n_THOM_cells <- function(n, k, scale, mu){
+  cells <- c()
+  for (i in 1:n) {
+    cells <- c(cells, thom_ellipse_cell(k, scale, mu))
+  }
+  return(cells)
+}
+```
+
+# Function for point to nearest event distance 
+## find nearest distances from datafram 1 to dataframe 2
+```{r}
+dist_between_sets <- function(df1, df2){
+  n <- nrow(df1)
+  
+  x2 <- as.data.frame(lapply(df2[,1], rep, n))
+  y2 <- as.data.frame(lapply(df2[,2], rep, n))
+  
+  distances <- sqrt((x2-df1[,1])^2 + (y2-df1[,2])^2)
+  distances <- apply(distances, 1, min)
+  return(distances)
+}
+```
+
+# Point to Nearest Event Distribution
+```{r}
+PNED <- function(n_cells){
+  n <- length(n_cells)/2
+  all_ds <- c()
+  for (i in 1:n) {
+    a_i <- n_cells[[2*i - 1]][1]
+    b_i <- n_cells[[2*i]][1]
+    xy_c <- data.frame((n_cells[[2*i - 1]][-1])/a_i, (n_cells[[2*i]][-1])/b_i)
+    
+    k <- round(sqrt(nrow(xy_c)))
+    x <- seq(-1, 1, length.out = k)
+    y <- seq(-1, 1, length.out = k)
+    xy_grid <- expand.grid(x, y)
+    xs <- xy_grid[,1]
+    ys <- xy_grid[,2]
+    
+    xk <- xs[which(xs^2 + ys^2 < 1)]
+    yk <- ys[which(xs^2 + ys^2 < 1)]
+    k_grid <- data.frame(xk, yk)
+    d <- dist_between_sets(k_grid, xy_c)
+    all_ds <- c(all_ds, d)
+  }
+  return(all_ds)
+}
+```
+
+
+# Level - HPP
+```{r}
+times_rej_hpp <- c()
+for (i in 1:100) {
+  set_A <- n_hpp_cells(25, 50)
+  set_B <- n_hpp_cells(25, 50)
+  
+  pned_A <- PNED(set_A)
+  pned_B <- PNED(set_B)
+  
+  outcome <- ks.test(pned_A, pned_B)$p.value < 0.05
+  times_rej_hpp <- c(times_rej_hpp, outcome)
+}
+```
+
+```{R}
+cat("The test fails to reject H0 when H0 is true", mean(1-times_rej_hpp),"of the time")
+# output : The test fails to reject H0 when H0 is true 0.97 of the time
+```
+
+# Level - Thomas
+```{r}
+times_rej_thom <- c()
+for (i in 1:100) {
+  set_A <- n_THOM_cells(20, 10, 0.05, 5)
+  set_B <- n_THOM_cells(20, 10, 0.05, 5)
+  
+  pned_A <- PNED(set_A)
+  pned_B <- PNED(set_B)
+  
+  outcome <- ks.test(pned_A, pned_B)$p.value < 0.05
+  times_rej_thom <- c(times_rej_thom, outcome)
+}
+```
+
+```{r}
+cat("The test fails to reject H0 when H0 is true", mean(1-times_rej_thom),"of the time")
+# output: he test fails to reject H0 when H0 is true 0.85 of the time
+```
+
+# Power
+```{r}
+powers <- c()
+sigmas <- c(0.01, 0.05, 0.075, 0.1, 0.115, 0.125, 0.15, 0.175, 0.2, 0.25, 0.3, 
+            0.4, 0.5)
+for (i in 1:13) {
+  outcomes <- c()
+  for (j in 1:50) {
+    set_A <- n_THOM_cells(25, 10, sigmas[i], 5)
+    set_B <- n_hpp_cells(25, 50)
+    
+    pned_A <- PNED(set_A)
+    pned_B <- PNED(set_B)
+    
+    outcome_i <- ks.test(pned_A, pned_B)$p.value < 0.05
+    outcomes <- c(outcomes, outcome_i)
+  }
+  powers <- c(powers, mean(outcomes))
+}
+# Figure 3.7
+plot(sigmas, powers, xlab="sigma", ylab="power", 
+     main="Power Plot", type = "b", pch = 16)
+```
+
+```{r}
+powers
+# output: ##  [1] 1.00 1.00 1.00 0.94 0.74 0.66 0.24 0.18 0.18 0.10 0.08 0.04 0.06
+```
+
+
+
+
+
+

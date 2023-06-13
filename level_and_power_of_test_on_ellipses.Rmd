@@ -1,5 +1,5 @@
 ---
-title: "Visualising Point Patterns and Cells"
+title: "Level and Power of Test on Ellipse Shaped Cells"
 author: "Aneesha Iqbal"
 date: "09/06/2023"
 output: html_document

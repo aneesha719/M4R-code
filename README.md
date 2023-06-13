@@ -6,6 +6,8 @@ Figure 2.5 [edge_correc_fig.Rmd](https://github.com/aneesha719/M4R-code/blob/mai
 
 Figures 2.6, 2.8, 2.10, 2.11, 2.12: [functional_summary_stats_plotted.Rmd](https://github.com/aneesha719/M4R-code/blob/main/functional_summary_stats_plotted.Rmd)
 
+Figure 2.13, 2.14: [bivariate_functional_summary_stats_plotted.Rmd](https://github.com/aneesha719/M4R-code/blob/main/bivariate_functional_summary_stats_plotted.Rmd)
+
 Figure 3.6 [ks_test_statistic_visualisation.R](https://github.com/aneesha719/M4R-code/blob/main/ks_test_statistic_visualisation.R)
 
 Figure 3.9 [test_performance_irregular_cells.Rmd](https://github.com/aneesha719/M4R-code/blob/main/test_performance_irregular_cells.Rmd)

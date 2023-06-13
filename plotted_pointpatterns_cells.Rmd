@@ -343,7 +343,55 @@ plot(coords(bv_pp3), col=point_labs3, xlim=c(-1, 1), ylim=c(-1,1), pch=16, cex=1
 points(a3*cos(seq(0,2*pi, length.out = 1000)), b3*sin(seq(0,2*pi, length.out = 1000)), pch=20, cex=0.2)
 ```
 
+# Bivariate Neyman-Scott in an Ellipses
 
+```{r}
+# code taken from help on "rPoissonCluster"
+# multitype Neyman-Scott process (each cluster is a multitype process)
+nclust2 <- function(x0, y0, radius, n, types=c("i", "j")) {
+    X <- runifdisc(n, radius, centre=c(x0, y0))
+    M <- sample(types, n, replace=TRUE)
+    marks(X) <- M
+    return(X)
+  }
+```
+
+```{r}
+set.seed(412)
+
+a_vals <- runif(3) # x-scales
+b_vals <- runif(3) # y-scales
+
+max_lim <- max(a_vals, b_vals)
+
+MNS1 <- rPoissonCluster(15, 0.1, nclust2, radius=0.075, n=10, win=ellipse(a_vals[1], b_vals[1]))
+MNS2 <- rPoissonCluster(15, 0.1, nclust2, radius=0.075, n=10, win=ellipse(a_vals[2], b_vals[2]))
+MNS3 <- rPoissonCluster(15, 0.1, nclust2, radius=0.075, n=10, win=ellipse(a_vals[3], b_vals[3]))
+
+cols1 <- rep("red", npoints(MNS1))
+cols1[which(MNS1$marks == "j")] <- "blue"
+
+cols2 <- rep("red", npoints(MNS2))
+cols2[which(MNS2$marks == "j")] <- "blue"
+
+cols3 <- rep("red", npoints(MNS3))
+cols3[which(MNS3$marks == "j")] <- "blue"
+
+# Figure 4.2(a)
+plot(coords(MNS1), col=cols1, xlim=c(-max_lim, max_lim), ylim=c(-max_lim, max_lim), pch=16, xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+points(a_vals[1]*cos(seq(0, 2*pi, length.out = 1000)), b_vals[1]*sin(seq(0, 2*pi, length.out = 1000)), pch=20, cex=0.2)
+legend("bottomleft", inset=.05, c("i", "j"), col=c("red", "blue"), pch=16)
+
+# extra plot not included
+plot(coords(MNS2), col=cols2, xlim=c(-max_lim, max_lim), ylim=c(-max_lim, max_lim), pch=16, xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+points(a_vals[2]*cos(seq(0, 2*pi, length.out = 1000)), b_vals[2]*sin(seq(0, 2*pi, length.out = 1000)), pch=20, cex=0.2)
+legend("bottomleft", inset=.05, c("i", "j"), col=c("red", "blue"), pch=16)
+
+# Figure 4.3(b)
+plot(coords(MNS3), col=cols3, xlim=c(-max_lim, max_lim), ylim=c(-max_lim, max_lim), pch=16, xlab="",xaxt="n", ylab="",yaxt="n",axes=F)
+points(a_vals[3]*cos(seq(0, 2*pi, length.out = 1000)), b_vals[3]*sin(seq(0, 2*pi, length.out = 1000)), pch=20, cex=0.2)
+legend("bottomleft", inset=.05, c("i", "j"), col=c("red", "blue"), pch=16)
+```
 
 
 

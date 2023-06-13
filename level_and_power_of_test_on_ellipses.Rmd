@@ -1,5 +1,5 @@
 ---
-title: "Level and Power of Test on Ellipse Shaped Cells"
+title: "Test Performance for Bivariate Cells"
 author: "Aneesha Iqbal"
 date: "09/06/2023"
 output: html_document
@@ -9,183 +9,165 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(spatstat)
-library(ggplot2)
+library(rearrr)
 ```
 
-# HOMOGENEOUS POISSON PROCESS IN RANDOM ELLIPSE SHAPED CELL
-```{r}
-pp_ellipse_cell <- function(l){
-  a <- runif(1)
-  b <- runif(1)
-  
-  # generate points for poisson process
-  hpp <- rpoispp(l/(a*b*pi), win = c(-a, a, -b, b))
-  x <- hpp[["x"]] # extract x positions
-  y <- hpp[["y"]] # extract y positions
-  
-  # keep events that lie inside ellipse
-  x_hpp <- x[which((x/a)^2 + (y/b)^2 < 1)]
-  y_hpp <- y[which((x/a)^2 + (y/b)^2 < 1)]
-  
-  cell_df <- data.frame(x = x_hpp, y = y_hpp)
-  cell_df <- rbind(c(a,b), cell_df)
-  return(cell_df)
-}
 
-# N CELLS WITH HPP
-n_hpp_cells <- function(n, l){
+# Function to generate m ellipse cells containing independent bivariate 
+# homogeneous poisson process
+```{r}
+m_indep_bv_hpp <- function(m, l){
   cells <- c()
-  for (i in 1:n) {
-    cells <- c(cells, pp_ellipse_cell(l))
+  for (i in 1:m){
+    a <- runif(1)
+    b <- runif(1)
+    # adjusted intensity = l/(a*b*pi), events marked "i" and "j"
+    bv_pp <- rmpoispp(l/(a*b*pi), types=c("i","j"), win=ellipse(a,b))
+    xy_c <- coords(bv_pp)
+    # mapping ellipses to circles
+    xy_c$x <- xy_c$x/a
+    xy_c$y <- xy_c$y/b
+    xy_c$labs <- marks(bv_pp)
+    cells <- c(cells, xy_c)
   }
   return(cells)
 }
 ```
 
-# THOMAS PROCESS IN RANDOM ELLIPSE SHAPED CELL
+# Functions used to generate bivariate neyman-scott cells
 ```{r}
-thom_ellipse_cell <- function(k, scale, mu){
-  a <- runif(1) # stretch in x direction
-  b <- runif(1) # stretch in y direction
-  
-  thom <- rThomas(k/(a*b*pi), sqrt(a*b*pi)*scale, mu, win = owin(c(-a, a),c(-b,b)))
-
-  x <- thom[["x"]] # extract x positions
-  y <- thom[["y"]] # extract y positions
-  
-  # keep events that lie inside ellipse
-  x_thom <- x[which((x/a)^2 + (y/b)^2 < 1)]
-  y_thom <- y[which((x/a)^2 + (y/b)^2 < 1)]
-  
-
-  thom_df <- data.frame(x=x_thom, y=y_thom)
-  thom_df <- rbind(c(a,b), thom_df)
-  
-  return(thom_df)
+# code taken from help on "rPoissonCluster"
+# multitype Neyman-Scott process (each cluster is a multitype process)
+nclust2 <- function(x0, y0, radius, n, types=c("i", "j")) {
+    X <- runifdisc(n, radius, centre=c(x0, y0))
+    M <- sample(types, n, replace=TRUE)
+    marks(X) <- M
+    return(X)
 }
 
-#N CELLS WITH THOMAS PROCESS
-n_THOM_cells <- function(n, k, scale, mu){
-  cells <- c()
-  for (i in 1:n) {
-    cells <- c(cells, thom_ellipse_cell(k, scale, mu))
+MT_NS_process <- function(kappa, expand, radius, n){
+  a <- runif(1) # x-scale
+  b <- runif(1) # y-scale
+  NS_pp <- rPoissonCluster(kappa/(pi*a*b), expand*sqrt(pi*a*b), nclust2, radius*sqrt(pi*a*b), n, win=ellipse(a,b))
+  pp_in_c <- affine(NS_pp, mat=diag(c(1/a, 1/b)))
+  xy_c <- coords(pp_in_c)
+  xy_c$labs <- marks(pp_in_c)
+  return(xy_c)
+}
+
+m_MT_NS_process <- function(m, kappa, expand, radius, n){
+  all_cells <- c()
+  for(j in 1:m){
+    xy_df <- MT_NS_process(kappa, expand, radius, n)
+    all_cells <- c(all_cells, xy_df)
   }
-  return(cells)
+  return(all_cells)
 }
 ```
 
-# Function for point to nearest event distance 
-## find nearest distances from datafram 1 to dataframe 2
+# Bivariate point to nearest event distribution (BPNED)
 ```{r}
-dist_between_sets <- function(df1, df2){
-  n <- nrow(df1)
-  
-  x2 <- as.data.frame(lapply(df2[,1], rep, n))
-  y2 <- as.data.frame(lapply(df2[,2], rep, n))
-  
-  distances <- sqrt((x2-df1[,1])^2 + (y2-df1[,2])^2)
-  distances <- apply(distances, 1, min)
-  return(distances)
-}
-```
+PNED_bv <- function(set_of_cells){
+  PNED_df <- data.frame("i"=c(0), "j"=c(0))
+  m <- length(set_of_cells)/3
+  for (i in 1:m){
+    labs_i <- set_of_cells[[3*i]]
+    xy_c <- data.frame(x=set_of_cells[[3*i-2]], y=set_of_cells[[3*i-1]])
 
-```{r}
-PNED <- function(n_cells){
-  n <- length(n_cells)/2
-  all_ds <- c()
-  for (i in 1:n) {
-    a_i <- n_cells[[2*i - 1]][1]
-    b_i <- n_cells[[2*i]][1]
-
-    xy_c <- data.frame((n_cells[[2*i - 1]][-1])/a_i, (n_cells[[2*i]][-1])/b_i)
-    
     k <- round(sqrt(nrow(xy_c)))
+    xg <- seq(-1, 1, length.out = k)
+    yg <- seq(-1, 1, length.out = k)
+    xy_grid <- expand.grid(xg, yg)
+    k_grid <- xy_grid[which(xy_grid[,1]^2+xy_grid[,2]^2<1),]
+    unif_pp <- ppp(k_grid[,1], k_grid[,2], window=disc(1))
 
-    x <- seq(-1, 1, length.out = k)
-    y <- seq(-1, 1, length.out = k)
+    xy1 <- xy_c[which(labs_i=="i"),]
+    xy2 <- xy_c[which(labs_i=="j"),]
+    p1 <- ppp(xy1[,1], xy1[,2], window=disc(1))
+    p2 <- ppp(xy2[,1], xy2[,2], window=disc(1))
 
-    xy_grid <- expand.grid(x, y)
-
-    xs <- xy_grid[,1]
-    ys <- xy_grid[,2]
-    
-    xk <- xs[which(xs^2 + ys^2 < 1)]
-    yk <- ys[which(xs^2 + ys^2 < 1)]
-
-    k_grid <- data.frame(xk, yk)
-
-    d <- dist_between_sets(k_grid, xy_c)
-    all_ds <- c(all_ds, d)
+    mid_df <- nncross(unif_pp, p1)
+    mid_df[,2] <- nncross(unif_pp, p2)[,1]
+    colnames(mid_df) <- c("i", "j")
+    PNED_df <- rbind(PNED_df, mid_df)
   }
-  return(all_ds)
+  PNED_df = PNED_df[-1,]
+  return(PNED_df)
 }
 ```
 
+# Implementing test from section 4.2 and 2.3
 ```{r}
-times_rej_hpp <- c()
-for (i in 1:100) {
-  set_A <- n_hpp_cells(25, 50)
-  set_B <- n_hpp_cells(25, 50)
-  
-  pned_A <- PNED(set_A)
-  pned_B <- PNED(set_B)
-  
-  outcome <- ks.test(pned_A, pned_B)$p.value < 0.05
-  times_rej_hpp <- c(times_rej_hpp, outcome)
+ pned_bv_test <- function(setA, setB){ 
+  pned_vals_A <- PNED_bv(setA)
+  pned_vals_B <- PNED_bv(setB)
+  m <- nrow(pned_vals_A)
+  n <- nrow(pned_vals_B)
+  N <- n + m
+  pooled_pned <- rbind(pned_vals_A, pned_vals_B)
+  pooled_mean <- colMeans(pooled_pned)
+  pooled_pned$i <- pooled_pned$i - pooled_mean[1]
+  pooled_pned$j <- pooled_pned$j - pooled_mean[2]
+  pooled_pned <- angle(pooled_pned, x_col="i", y_col="j", origin = c(0,0), origin_col_name=NULL, degrees_col_name="angles")
+  pooled_pned$set_label <- c(rep('a', m), rep('b', n))
+  sorted_pooled_pned <- pooled_pned[order(pooled_pned$angles),]
+  sorted_pooled_pned$angle_rank <- seq(N)
+  sorted_pooled_pned$u <- cos(2*pi*sorted_pooled_pned$angle_rank/N)
+  sorted_pooled_pned$v <- sin(2*pi*sorted_pooled_pned$angle_rank/N)
+  new_set_A <- sorted_pooled_pned[which(sorted_pooled_pned$set_label == "a"), ]
+  U <- ((sum(new_set_A$u))^2 + (sum(new_set_A$v))^2) * 2 * (N - 1)/(m*n)
+  d <- 1 + (N*(N+1)-6*m*n)/(N*(m-1)*(n-1))
+  # included f-distribution since suggested in paper - but worse asymptotic properties so not used
+  p_value1 <- 1 - pf(U, d, ((N-3)*d)) 
+  p_value2 <- 1 - pchisq(U, df = 2)
+  return(c(p_value1, p_value2))
 }
 ```
 
-```{R}
-cat("The test fails to reject H0 when H0 is true", mean(1-times_rej_hpp),"of the time")
-# output : The test fails to reject H0 when H0 is true 0.97 of the time
-```
 
+# level of test for independent bivariate homogeneous poisson process
 ```{r}
-times_rej_thom <- c()
-for (i in 1:100) {
-  set_A <- n_THOM_cells(20, 10, 0.05, 5)
-  set_B <- n_THOM_cells(20, 10, 0.05, 5)
-  
-  pned_A <- PNED(set_A)
-  pned_B <- PNED(set_B)
-  
-  outcome <- ks.test(pned_A, pned_B)$p.value < 0.05
-  times_rej_thom <- c(times_rej_thom, outcome)
+p_vals_hpp <- matrix(0, nrow=2, ncol=100)
+for(r in 1:100){
+  setA <- m_indep_bv_hpp(20,25)
+  setB <- m_indep_bv_hpp(20,25)
+  p_vals_hpp[, r] <- pned_bv_test(setA, setB)
 }
+rownames(p_vals_hpp) <- c("f-dist", "chisq-dist")
+
+rowMeans(p_vals_hpp < 0.05)[2]
+# output: chisq-dist:  0.05
 ```
 
+# level of test for bivariate neyman-scott
 ```{r}
-cat("The test fails to reject H0 when H0 is true", mean(1-times_rej_thom),"of the time")
-# output: he test fails to reject H0 when H0 is true 0.85 of the time
-```
-
-```{r}
-powers <- c()
-sigmas <- c(0.01, 0.05, 0.075, 0.1, 0.115, 0.125, 0.15, 0.175, 0.2, 0.25, 0.3, 
-            0.4, 0.5)
-for (i in 1:13) {
-  outcomes <- c()
-  for (j in 1:50) {
-    set_A <- n_THOM_cells(25, 10, sigmas[i], 5)
-    set_B <- n_hpp_cells(25, 50)
-    
-    pned_A <- PNED(set_A)
-    pned_B <- PNED(set_B)
-    
-    outcome_i <- ks.test(pned_A, pned_B)$p.value < 0.05
-    outcomes <- c(outcomes, outcome_i)
-  }
-  powers <- c(powers, mean(outcomes))
+# level of test (type-I error)
+p_vals_hpp <- matrix(0, nrow=2, ncol=100)
+for(r in 1:100){
+  setA <- m_MT_NS_process(10, 10, 1, 0.01, 3)
+  setB <- m_MT_NS_process(10, 10, 1, 0.01, 3)
+  p_vals_hpp[, r] <- pned_bv_test(setA, setB)
 }
+rownames(p_vals_hpp) <- c("f-dist", "chisq-dist")
 
-# Figure 3.7
-plot(sigmas, powers, xlab="sigma", ylab="power", 
-     main="Power Plot", type = "b", pch = 16)
+rowMeans(p_vals_hpp < 0.05)[2]
+# output: chisq-dist:  0.09
 ```
 
+# power of test
 ```{r}
-powers
-# output: ##  [1] 1.00 1.00 1.00 0.94 0.74 0.66 0.24 0.18 0.18 0.10 0.08 0.04 0.06
+p_vals_hpp_v_NS <- matrix(0, nrow=2, ncol=100)
+for(r in 1:100){
+  setA <- m_indep_bv_hpp(20,24)
+  setB <- m_MT_NS_process(20, 12, 0.1, 0.05, 4)
+  p_vals_hpp_v_NS[, r] <- pned_bv_test(setA, setB)
+}
+rownames(p_vals_hpp_v_NS) <- c("f-dist", "chisq-dist")[2]
+# output: chisq-dist:  0.97
 ```
+
+
+
+
 
 

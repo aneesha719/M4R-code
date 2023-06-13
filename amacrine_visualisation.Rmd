@@ -1,0 +1,21 @@
+title: "Amacrine Cells Visualisation"
+author: "Aneesha Iqbal"
+date: "09/06/2023"
+output: html_document
+---
+
+# Install Packages
+```{r setup, include=FALSE}
+library(spatstat)
+```
+
+
+```{r}
+plot(amacrine, cols=2:3, pch=16)
+```
+
+
+
+
+
+

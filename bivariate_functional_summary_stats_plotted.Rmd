@@ -9,7 +9,6 @@ output: html_document
 library(spatstat)
 ```
 
-
 # Cross K-Function on Urkiola Dataset
 
 ```{r}
@@ -24,6 +23,32 @@ plot(urkiola_KBO$r, urkiola_KBO$iso, type="s", col="red",
      xlab="r", ylab = "cross K-function")
 lines(urkiola_KOB$r, urkiola_KOB$iso, type="s", col="blue")
 legend("topleft", inset=.025, c(expression(K[BO]), expression(K[OB])), 
+       col=c("red", "blue"), lty=1, lwd=2)
+```
+
+
+
+# Gij and Gji on Betacells Dataset (using "on" and "off" marks)
+
+```{r}
+BC_PP <- ppp(betacells$x, betacells$y, window=betacells$window,
+             marks = betacells$marks$type)
+```
+
+```{r}
+BC_Gij <- Gcross(BC_PP, "on", "off", correction = "none",
+                       r=seq(0,	110, length.out = 100))
+BC_Gji <- Gcross(BC_PP, "off", "on", correction = "none",
+                       r=seq(0,	110, length.out = 100))
+```
+
+```{r}
+# plot both bivariate nearest neighbour functions on same axes
+plot(BC_Gij$r, BC_Gij$raw, type="l", col="blue", lwd=2,
+     main="Bivariate Nearest Neighbour Distributions on the Betacells Data Set",
+     xlab="r", ylab = "ecdf", ylim=c(0, 1))
+lines(BC_Gji$r, BC_Gji$raw, col="red", lwd=2)
+legend("topleft", inset=.025, c(expression(G["on, off"]), expression(G["off, on"])), 
        col=c("red", "blue"), lty=1, lwd=2)
 ```
 

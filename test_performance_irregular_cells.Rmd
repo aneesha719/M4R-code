@@ -122,6 +122,77 @@ PNED_c <- function(n_cells){
 }
 ```
 
+# Power of Test as a function of Irregularity
+```{r}
+set.seed(304)
+circumferences <- rep(0,10)
+cell_r_vars <- rep(0,10)
+areas <- rep(0,10)
+powers <- rep(0,10)
+for (i in 1:10){
+    u <- rev(sort(runif(3)))
+    t <- runif(3)
+    thetas <- seq(0,2*pi,length.out=1000)
+    r <- r_mag(thetas, u, t)
+    x <- r * cos(thetas)
+    y <- r * sin(thetas)
+    WC <- owin(poly = list(x = x, y = y))
+    area_cell <- (0.5*sum(u^2)+9)*pi
+    areas[i] <- area_cell
+    circumferences[i] <- circumference(u,t)
+    cell_r_vars[i] <- var(r)
+    outcomes <- rep(0,50)
+    for (j in 1:50){
+        set_A <- c()
+        for (p in 1:20){
+            pp_s <- rpoispp(50/(area_cell), win = WC)
+            x1 <- pp_s[["x"]]
+            y1 <- pp_s[["y"]]
+            df_xy <- in_cell_to_c(x1, y1, u, t)
+            set_A <- c(set_A, df_xy)
+        }
+        set_B <- c()
+        for (p in 1:20){
+            pp_s <- rThomas(10/(area_cell), sqrt(area_cell)*0.09, 5, win = WC)
+            x1 <- pp_s[["x"]]
+            y1 <- pp_s[["y"]]
+            df_xy <- in_cell_to_c(x1, y1, u, t)
+            set_B <- c(set_B, df_xy)
+        }
+        pned_A <- PNED_c(set_A)
+        pned_B <- PNED_c(set_B)
+        outcomes[j] <- ks.test(pned_A, pned_B)$p.value < 0.05
+    }
+    powers[i] <- mean(outcomes)
+}
+```
+
+```{r}
+circumferences/areas
+# output: 0.666428570550276 0.670771988490272 0.664519556288033 
+# 0.673669893962963 0.669526804805917 0.6770217381394280.664337604112697 
+# 0.6676695723661250.662885773649998 0.659851552543466
+
+cell_r_vars
+# output: 0.721472449269 0.273733576538683 0.0741522302780681 0.639308920016978 
+# 0.814457834530209 0.744882850782814 0.111233957343338 0.670155751020617 
+# 0.299722274317176 0.356381155943414
+
+powers
+# output: 0.94 0.98 1 0.92 0.94 0.94 0.98 0.96 1 0.94
+```
+
+```{r}
+# Figure 3.8(a)
+plot(cell_r_vars, powers, xlab="variance in radius", 
+     ylab="power", main="Power for Cells with different Radius Variances", pch=16)
+
+# Figure 3.8(b)
+plot(circumferences/areas, powers, xlab="circumference-to-area ratio", 
+     ylab="power", main="Power for Cells with different Circumference-to-Area Ratios", pch=16)
+```
+
+
 # Level of Test
 
 ## HPP
@@ -269,6 +340,7 @@ t(data.frame(sigmas=sigmas, powers=powers2))
 
 
 ```{r}
+# Figure 3.9
 plot(sigmas, powers2, pch=16, main=expression("Power of the Test as a function of" ~sigma~ "for Irregular Cells"), xlab = expression(~sigma), ylab = "power")
 lines(sigmas, powers2)
 ```
